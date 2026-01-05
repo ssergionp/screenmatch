@@ -1,13 +1,13 @@
 package br.com.alura.screenmatch.principal;
 
+import br.com.alura.screenmatch.model.DadosEpisodio;
 import br.com.alura.screenmatch.model.DadosSerie;
 import br.com.alura.screenmatch.model.DadosTemporada;
 import br.com.alura.screenmatch.service.ConsumoAPI;
 import br.com.alura.screenmatch.service.ConverteDados;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Principal {
     private final String API_KEY = "&apikey=8f317ae9";
@@ -26,21 +26,45 @@ public class Principal {
         System.out.println("Dados da Série: " + dados);
 
         // Busca todas as temporadas através de um loop
-		List<DadosTemporada> temporadas = new ArrayList<>();
-		for (int i = 1; i <= dados.totalTemporadas(); i++) {
-			json = consumoApi.obterDados(
+        List<DadosTemporada> temporadas = new ArrayList<>();
+        for (int i = 1; i <= dados.totalTemporadas(); i++) {
+            json = consumoApi.obterDados(
                     BASE_URL + nomeSerie.replace(" ", "+")
                             + "&season=" + i + API_KEY);
-			DadosTemporada dadosTemporada = conversor.obterDados(json, DadosTemporada.class);
-			temporadas.add(dadosTemporada);
-		}
+            DadosTemporada dadosTemporada = conversor.obterDados(json, DadosTemporada.class);
+            temporadas.add(dadosTemporada);
+        }
 
-		System.out.println("Temporadas da Série:");
-		temporadas.forEach(System.out::println);
+        System.out.println("Temporadas da Série:");
+        temporadas.forEach(System.out::println);
+
         // Lista todos os episodios das temporadas
-		System.out.println("\nListagem de todos os Episódios:");
-		temporadas.forEach(t -> t.episodios().forEach(e ->
-				System.out.println("T" + t.numero() + "E" + e.numero() + " - " + e.titulo())
-		));
+        System.out.println("\nListagem de todos os Episódios:");
+        temporadas.forEach(t -> t.episodios().forEach(e ->
+                System.out.println("T" + t.numero() + "E" + e.numero() + " - " + e.titulo())
+        ));
+
+        temporadas.forEach(System.out::println);
+
+        List<String> nomes = Arrays.asList("Jaqueline", "Iasmin", "Paulo", "João", "Maria");
+
+//        nomes.stream()
+//                .sorted()
+//                .limit(3)
+//                .filter((n -> n.startsWith("J")))
+//                .map(n -> n.toUpperCase())
+//                .forEach(System.out::println);
+
+        List<DadosEpisodio> dadosEpisodios = temporadas.stream()
+                .flatMap(t -> t.episodios().stream())
+                .collect(Collectors.toList()); // Coleção mutável
+                // .toList() - Cria coleção imutável
+
+        System.out.println("\nTop 5 Episódios:");
+        dadosEpisodios.stream()
+                .filter(e -> !e.avaliacao().equalsIgnoreCase("N/A") )
+                .sorted(Comparator.comparing(DadosEpisodio::avaliacao).reversed())
+                .limit(5)
+                .forEach(System.out::println);
     }
 }
